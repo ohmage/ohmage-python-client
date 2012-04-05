@@ -20,9 +20,6 @@ api.login(<username>, <password>)
 # now the api handle contains both a short-use token and a hashed
 # password which can be used indefinitely. if either become invalid,
 # the api will throw an OhmageApiException containing a code 0200.
-
-# if you'd like to examine or store the credentials, they're available
-# via api.auth_username, api.auth_hashedpass, and api.auth_token.
 ~~~
     
 ## Performing a simple request and checking for errors
@@ -35,8 +32,8 @@ try:
     result = api.campaign_read(output_format="short")
 except OhmageApi.OhmageApiException as ex:
     # let's do something special if there was an auth error (e.g. code 0200)
-    if '0200' in ex.codes():
-        print "Your login credentials are bad. Please log in again."
+    if 200 in ex.codes():
+        print "Your login credentials are invalid, exiting."
         exit(-1)
     # otherwise, pass it up to our caller
     raise
