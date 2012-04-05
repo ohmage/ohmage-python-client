@@ -4,6 +4,10 @@ This is a thin Python client for the Ohmage server, a reference openmHealth DSU.
 single class, OhmageApi, which represents a connection to the server, and a few supporting
 classes for representing Ohmage entities.
 
+*NOTE:* The API is not yet complete; I'm implementing it in a top-down fashion (e.g. adding
+functionality as the projects it supports require it). I anticipate that it'll be finished
+soon, but in the meantime drop me a line if you need something that's missing.
+
 ## Connecting to Ohmage via OhmageApi
 
 ~~~python
