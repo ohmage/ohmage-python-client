@@ -1,6 +1,6 @@
 #Ohmage API Python Client#
 
-This is a thin Python client for the Ohmage server, a data storage unit. It consists of a
+This is a thin Python client for the Ohmage server, a reference openmHealth DSU. It consists of a
 single class, OhmageApi, which represents a connection to the server, and a few supporting
 classes for representing Ohmage entities.
 
