@@ -1,3 +1,11 @@
+"""
+A collection of classes and methods for interacting with the Ohmage server.
+
+Most requests are handled through an instace of the OhmageApi class, which
+takes care of authenticating each request. Some methods require or return other
+supporting classes in this module.
+"""
+
 # the version of the Ohmage API that this module targets
 # you should connect to a server >= this version for best results
 __api_version__ = "2.10"
@@ -7,14 +15,6 @@ from datetime import datetime
 
 # and finally the base API
 from base import BaseApi
-
-"""
-A collection of classes and methods for interacting with the Ohmage server.
-
-Most requests are handled through an instace of the OhmageApi class, which
-takes care of authenticating each request. Some methods require or return other
-supporting classes in this module.
-"""
 
 class OhmageApi(BaseApi):
     """
@@ -64,6 +64,13 @@ class OhmageApi(BaseApi):
             self.auth_token = result['token']
             
     def is_authenticated(self, forToken=False):
+        """
+        Returns true if credentials are stored in this api handle, whether or not
+        they are still valid.
+
+        For reference, token-based authentication times out after a while, whereas
+        hashed passwords remain valid indefinitely.
+        """
         return hasattr(self, 'auth_username') and (
                 (forToken and hasattr(self, 'auth_token')) or
                 (not forToken and hasattr(self, 'auth_hashedpass'))
@@ -85,6 +92,9 @@ class OhmageApi(BaseApi):
     # ========================================================
     
     def config_read(self, **kwargs):
+        """
+        Returns information about a particular ohmage install.
+        """
         params={}
         params.update(kwargs)
         return self._perform_request('/config/read', method="GET", params=params)
@@ -274,10 +284,29 @@ class OhmageApi(BaseApi):
         return result
         
     class OhmageApiException(Exception):
+        """
+        Raised when an Ohmage API call produces a response where the result is not success.
+
+        The possible errors and their associated codes are listed here, for reference:
+        https://github.com/cens/ohmageServer/wiki/Error-Codes
+        """
         def __init__(self, errors):
             self.errors = errors
+
+        def errors(self):
+            """
+            Returns a list of dicts describing the errors that produced this exception.
+
+            Each dict has a key 'code' which is the numeric code for the error, and
+            'text' which is a plain-text description of the error. Note that multiple
+            errors may map to the same code.
+            """
+            return self.errors
             
         def codes(self):
+            """
+            Returns a list of the error codes that caused this exception as integers.
+            """
             return [int(x['code']) for x in self.errors]
             
         def __str__(self):
@@ -291,6 +320,12 @@ class Survey(dict):
     Represents a completed survey. 'responses' is a list of Response objects.
     """
     def __init__(self, survey_id, time, timezone, responses, uuid=None):
+        """
+        Constructs a new survey response with the specified values.
+
+        'responses' should be a list of Response objects.
+        Ommitting the 'uuid' paramter causes a unique uuid4 to be generated automatically.
+        """
         self['survey_key'] = str(uuid) if uuid is not None else str(uuid.uuid4())
         self['time'] = time
         self['timezone'] = timezone
