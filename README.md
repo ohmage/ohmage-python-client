@@ -11,6 +11,8 @@ soon, but in the meantime drop me a line if you need something that's missing.
 ## Connecting to Ohmage via OhmageApi
 
 ~~~python
+from ohmagekit.clients import OhmageApi
+
 # construct an api handle. note that no connection occurs until
 # you make a request.
 api = OhmageApi(<server>)
