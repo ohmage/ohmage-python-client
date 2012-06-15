@@ -37,19 +37,24 @@ class OAuthApi(BaseApi):
         self.api_key = api_key
         self.api_secret = api_secret
 
+        # configure the consumer, which basically holds up the credentials for the client to communicate with a service
         self.consumer = oauth2.Consumer(api_key, api_secret)
+
+        # configure the client, which uses the consumer's creds to fire off individual requests
         self.client = oauth2.Client(self.consumer)
+        # self.client.set_signature_method(oauth2.SignatureMethod_HMAC_SHA1())
         self.client.set_signature_method(oauth2.SignatureMethod_PLAINTEXT())
 
-        self.request_token_url = request_token_url
-        self.access_token_url = access_token_url
-        self.authenticate_url = authenticate_url
+        # set up paths for asking for various oauth resources
+        self.request_token_url = request_token_url # where we ask for our negotiation-phase temp token
+        self.authenticate_url = authenticate_url # where the end-user is redirected to ok the process
+        self.access_token_url = access_token_url # where we exchange the negotiation-phase token for a permanent one
 
     # ========================================================
     # === OAuth Handshake
     # ========================================================
     
-    def get_auth_url(self, callback_url=None):
+    def get_auth_url(self, callback_url=None, appendix_params=None):
         """
         Produces a URL which the owner of the account should visit to authorize an app
         to access their information. The URL contains an intermediate token which is
@@ -61,12 +66,17 @@ class OAuthApi(BaseApi):
         in order to complete the authentication process.
         """
 
+        # create a dict of extras that we'll pass to the call
+        extra_params_dict = {'oauth_callback': callback_url}
+        # add any additional extras (bodymedia's required api_key in each request, for instance)
+        if appendix_params: extra_params_dict.update(appendix_params)
         # encode the callback as part of the body, oddly enough
-        extra_params = urllib.urlencode({'oauth_callback': callback_url}) if callback_url else None
+        extra_params = urllib.urlencode(extra_params_dict) if len(extra_params_dict) > 0 else None
 
         # get temporary token
         resp, content = self.client.request(self.server + self.request_token_url, "POST", body=extra_params)
         if resp['status'] != '200':
+            print "*** Error %s: %s" % (resp['status'], content)
             raise OAuthApi.OAuthException("Received a non-200 response (%s) in get_auth_url()" % (resp['status']), content)
 
         rq_token = dict(urlparse.parse_qsl(content))
@@ -74,9 +84,12 @@ class OAuthApi(BaseApi):
         # create and return the redirect url
         params = {'oauth_token': rq_token['oauth_token']}
 
+        # and add the appendix params, if they're there
+        if appendix_params: params.update(appendix_params)
+
         return rq_token, "%s?%s" % (self.server + self.authenticate_url, urllib.urlencode(params))
         
-    def process_auth_response(self, rq_token, verifier):
+    def process_auth_response(self, rq_token, verifier, appendix_params=None):
         """
         Processes an authentication request, using the request token passed back
         from get_auth_url() plus a verifier included in GET parameter 'oauth_verifier'
@@ -87,16 +100,21 @@ class OAuthApi(BaseApi):
         token = oauth2.Token(rq_token['oauth_token'], rq_token['oauth_token_secret'])
         token.set_verifier(verifier)
         client = oauth2.Client(self.consumer, token)
+        client.set_signature_method(oauth2.SignatureMethod_PLAINTEXT())
+
+        # add the appendix params if they're present to the list of body arguments
+        extra_params = urllib.urlencode(appendix_params) if appendix_params else None
         
         # request the authorized access token
-        resp, content = client.request(self.server + self.access_token_url, "POST")
+        resp, content = client.request(self.server + self.access_token_url, "POST", body=extra_params)
         if resp['status'] != '200':
+            print content
             raise OAuthApi.OAuthException("Received a non-200 response (%s) in process_auth_response()" % (resp['status']), content)
 
         access_token = dict(urlparse.parse_qsl(content))
         
         return access_token
-            
+
     # ========================================================
     # === Exceptions
     # ========================================================
