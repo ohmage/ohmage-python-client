@@ -26,3 +26,19 @@ class FitBitApi(OAuthApi):
         
         # return the interpreted data
         return simplejson.loads(content)
+
+    def activities_intraday_steps(self, token, date='today'):
+        # set up for a fitbit authed request
+        token = oauth.Token(token['oauth_token'], token['oauth_secret'])
+        client = oauth.Client(self.consumer, token)
+        client.set_signature_method(oauth.SignatureMethod_PLAINTEXT())
+        url = self.server + self.app_prefix + '/user/-/activities/steps/date/%s/1d.json' % (date)
+
+        # and launch the request
+        resp, content = client.request(url, "GET", force_auth_headers=True)
+        if resp['status'] != '200':
+            print content
+            raise Exception("Invalid response from FitBit.")
+
+        # return the interpreted data
+        return simplejson.loads(content)

@@ -245,6 +245,43 @@ class OhmageApi(BaseApi):
         self._add_login_to_params(params, useToken=True)
         
         return self._perform_request('/mobility/read', method="POST", params=params)
+
+    def mobility_dates_read(self, auth_token=None, start_date=None, end_date=None, username=None, **kwargs):
+        """
+        Returns a list of mobility data points conforming to the given parameters.
+
+        == token-based authentication takes this param:
+
+            (r) auth_token = A valid authentication token from user/auth_token
+
+        == OR explicitly authenticate with these params:
+
+            (r) user = A username of the user attempting to login
+            (r) password = A password for the above user.
+
+        (r) client = A short description of the software client performing the upload.
+        (o) start_date = An ISO8601-formatted date which limits the results to only those dates on or after this one.
+        (o) end_date = An ISO8601-formatted date which limits the results to only those dates on or before this one.
+        (o) username = The username of the user whose data is desired. This is only applicable if the requesting user is an admin or if the server allows it and the requesting user is privileged in any class to which the desired user belongs.
+        """
+
+        # take the required arguments
+        params = {
+            'auth_token': auth_token,
+            'client': self.client
+        }
+        # and allow any other optional parameters they may wish to pass
+        params.update(kwargs)
+
+        # and add the optional params
+        if start_date: params['start_date'] = start_date
+        if end_date: params['end_date'] = end_date
+        if username: params['username'] = username
+
+        # and supplement with the stored credentials, if present
+        self._add_login_to_params(params, useToken=True)
+
+        return self._perform_request('/mobility/dates/read', method="POST", params=params)
         
     # ========================================================
     # === support methods and classes
